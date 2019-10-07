@@ -170,7 +170,7 @@ function Get-IPrangeStartEnd
 
 function Get-PublicIPFromResourceGroup 
 {       
-    <# Get-PublicIPFromResourceGroup will return a object with the name and public address
+    <# Get-PublicIPFromResourceGroup will return a object with the name and public address(es)
     Example Format: 
 
     name                                        IpAddress
