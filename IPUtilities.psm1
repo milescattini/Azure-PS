@@ -186,7 +186,13 @@ function Get-PublicIPFromResourceGroup
 
         $ReturnList = @()
         
-        $IPProperty = Get-AzureRmPublicIpAddress -ResourceGroupName $ResourceGroupName
+        if ($IPProperty.length -eq 0){
+            write-host ("No Public Ip Addresses In " + $ResourceGroupName)
+            return $null
+        }
+
+        write-host ("Public IPs Found:" + $IPProperty.Length)
+        
         foreach ($IPEntry in $IPProperty){
 
             $IPObject = [PSCustomObject]@{
