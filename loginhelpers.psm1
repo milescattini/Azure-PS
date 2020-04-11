@@ -1,10 +1,16 @@
 function Install-Az{
 
-    $InformationPreference = "Continue"
+  param (
+        [Parameter]
+        [string[]]
+        $RequiredModules = "Az.Accounts" , "Az.Resources"
+  )
 
-    $requiredModules = "Az.Accounts","Az.Resources","Az.Compute","Az.Storage"
+
+    $InformationPreference = "Continue"
     $modules = get-installedmodule
-    $missingModules = $requiredModules | ?{$modules.Name -notcontains $_}
+
+    $missingModules = $RequiredModules | ?{$modules.Name -notcontains $_}
 
     if($missingModules.Length -eq 0) {
         foreach($missingModule in $missingModules){
@@ -12,6 +18,7 @@ function Install-Az{
             Import-Module $missingModule -Force
         }
     }
+    
     else{
         foreach($missingModule in $missingModules){
             Write-Information "Installing $($missingModule)"
