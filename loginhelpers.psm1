@@ -2,16 +2,21 @@ function Install-Az{
 
     $InformationPreference = "Continue"
 
+    $requiredModules = "Az.Accounts","Az.Resources","Az.Compute","Az.Storage"
     $modules = get-installedmodule
+    $missingModules = $requiredModules | ?{$modules.Name -notcontains $_}
 
-    if($modules.Name.Contains("Az.Accounts") -AND $modules.Name.Contains("Az.Resources")) {
-        Import-Module Az.Accounts, Az.Resources
-        Write-Information "Modules already installed. Importing.. "
+    if($missingModules.Length -eq 0) {
+        foreach($missingModule in $missingModules){
+            Write-Information "Importing $($missingModule)"
+            Import-Module $missingModule -Force
+        }
     }
-
     else{
-        Install-Module Az -Force -AllowClobber
-        Write-Information "Installing Az.. "
+        foreach($missingModule in $missingModules){
+            Write-Information "Installing $($missingModule)"
+            Install-Module $missingModule -Force -AllowClobber
+        }
     }
 }
 
