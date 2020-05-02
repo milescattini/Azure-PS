@@ -6,7 +6,6 @@ function Install-Az{
         $RequiredModules = "Az.Accounts" , "Az.Resources"
   )
 
-
     $InformationPreference = "Continue"
     $modules = get-installedmodule
 
