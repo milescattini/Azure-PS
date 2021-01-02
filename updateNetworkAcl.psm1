@@ -38,28 +38,19 @@ function Set-KeyvaultNetworkACL {
         $Mode = "Update"
     )
 
+    Write-host "Configuring Keyvault..`n Vault:$($KeyvaultName)`n`n"
+
     Install-Az
     $ip = Get-AgentIP
     switch ($Mode) {
         "Update" { 
-            $currentIPs = (Get-AzKeyVault -VaultName $KeyvaultName).NetworkAcls
-            if ($currentIPs.IpAddressRanges.Length -eq 0) {
-                Update-AzKeyVaultNetworkRuleSet -VaultName $KeyvaultName -ResourceGroupName $ResourceGroupName -Bypass AzureServices -IpAddressRange "$($ip)" -DefaultAction Deny 
-                Write-Host "Setting Client IP Only: $($ip)/32"
-            }
-            else {
-                $currentIPs.IpAddressRanges.Add($($ip))
-                Write-Host "Setting Client Ip: $($ip)"
-                foreach ($ipAdress in $currentIPs.IpAddressRanges){
-                    Write-Host "Retaining Existing IP in Whitelist: $($ipAdress)" 
-                 }          
-                Update-AzKeyVaultNetworkRuleSet -VaultName $KeyvaultName -ResourceGroupName $ResourceGroupName -Bypass AzureServices -IpAddressRange $currentIPs.IpAddressRanges -DefaultAction Deny
-            }
-       }
+            Write-Host "Setting Client IP: $($ip)/32 on keyvault: $($KeyvaultName).."
+            Update-AzKeyVaultNetworkRuleSet -VaultName $KeyvaultName -ResourceGroupName $ResourceGroupName -Bypass AzureServices -IpAddressRange "$($ip)" -DefaultAction Deny 
+        }
 
         "Delete" { 
-            Write-Host "Removing Client Ip: $($ip)/32.."
-            Remove-AzKeyVaultNetworkRule -VaultName $KeyvaultName -ResourceGroupName $ResourceGroupName -IpAddressRange "$($ip)/32"
+            Write-Host "Removing all ips from keyvault: $($KeyvaultName).."
+            Update-AzKeyVaultNetworkRuleSet -VaultName $KeyvaultName -ResourceGroupName $ResourceGroupName -IpAddressRange @()  
          }
     }
 
@@ -72,6 +63,8 @@ function Set-AppServiceNetworkACL {
         $AppServiceName,
         $Mode = "Update"
     )
+
+    Write-host "Configuring App Service..`n App:$($AppServiceName)`n`n"
 
     Install-Az
     $ip = Get-AgentIP
@@ -92,25 +85,24 @@ function Set-StorageNetworkACL {
         $Mode = "Update"
     )
 
+    Write-host "Configuring Storage..`n Storage Account:$($AccountName)`n`n"
 
     Install-Az
 
-    Update-AzStorageAccountNetworkRuleSet -ResourceGroupName $ResourceGroupName -AccountName $AccountName -DefaultAction Deny
-
-    $ip = Get-AgentIP
-
     switch ($Mode) {
-        "Update" { 
-            Add-AzStorageAccountNetworkRule -ResourceGroupName $ResourceGroupName -AccountName $AccountName -IPAddressOrRange $($ip)
-            Write-Host "Sleep for 90 seconds, allow storage account ACL to apply.. "
-            Start-Sleep -s 90
+        "Update" {
+            Write-Host "Set default firewall action to Allow.."
+            Update-AzStorageAccountNetworkRuleSet -ResourceGroupName $ResourceGroupName -Name $AccountName -DefaultAction Allow
+            Write-Host "Sleep for 2 mins allow storage account ACL to apply.. "
+            Start-Sleep -m 2
             } 
-        "Delete" { 
-            Remove-AzStorageAccountNetworkRule -ResourceGroupName $ResourceGroupName -AccountName $AccountName -IPAddressOrRange $($ip)
+        "Delete" {
+            Write-Host "Set default firewall action to Deny.."
+            Update-AzStorageAccountNetworkRuleSet -ResourceGroupName $ResourceGroupName -Name $AccountName -DefaultAction Deny
+
+            Write-Host "Remove any specified ips.."
+            Update-AzStorageAccountNetworkRuleSet -ResourceGroupName $ResourceGroupName -Name $AccountName -IpRule @()  
             }  
      }
 
 }
-
-
-
