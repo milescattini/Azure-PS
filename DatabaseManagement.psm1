@@ -1,7 +1,7 @@
 # The DB performance requirement is much higher during some specific operations.
 # As such, this script will increase the DTU by a certain DTU to ensure appropriate performance / cost balance during update. 
 
-function Update-AzSQLDTU
+function Update-AzSQLDTU {
     Param(
         [ValidateSet('Increase','Decrease')]
         [String]
