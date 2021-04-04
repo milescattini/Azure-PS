@@ -29,6 +29,52 @@ function Get-AgentIP {
     return (Invoke-WebRequest -uri "http://ifconfig.me/ip" -UseBasicParsing).Content
 }
 
+function Get-IPrangeStartEnd 
+{       
+    <#
+    Get-IPrangeStartEnd will return an IP range from CIDR notation. This is a custom version of the MS implementation https://gallery.technet.microsoft.com/scriptcenter/Start-and-End-IP-addresses-bcccc3a9
+    Sample Usage: 
+    $myIP = Get-IPrangeStartEnd -ip '192.168.1.24' -cidr 8
+    Returns and object with Start and End Values. i.e 
+    start     end
+    -----     ---
+    192.0.0.0 192.255.255.255
+    #>
+
+    param (  
+        [string]$start,  
+        [string]$end,  
+        [string]$ip,  
+        [int]$cidr  
+    )    
+    function IP-toINT64 () {  
+        param ($ip)  
+       
+        $octets = $ip.split(".")  
+        return [int64]([int64]$octets[0]*16777216 +[int64]$octets[1]*65536 +[int64]$octets[2]*256 +[int64]$octets[3])  
+    }  
+    
+    function INT64-toIP() {  
+    param ([int64]$int)  
+
+    return (([math]::truncate($int/16777216)).tostring()+"."+([math]::truncate(($int%16777216)/65536)).tostring()+"."+([math]::truncate(($int%65536)/256)).tostring()+"."+([math]::truncate($int%256)).tostring() ) 
+    }  
+    
+    $ipaddr = [Net.IPAddress]::Parse($ip)
+    $maskaddr = [Net.IPAddress]::Parse((INT64-toIP -int ([convert]::ToInt64(("1"*$cidr+"0"*(32-$cidr)),2)))) 
+    $networkaddr = new-object net.ipaddress ($maskaddr.address -band $ipaddr.address)
+    $broadcastaddr = new-object net.ipaddress (([system.net.ipaddress]::parse("255.255.255.255").address -bxor $maskaddr.address -bor $networkaddr.address))
+
+
+    $startaddr = IP-toINT64 -ip $networkaddr.ipaddresstostring  
+    $endaddr = IP-toINT64 -ip $broadcastaddr.ipaddresstostring  
+    
+    $temp=""|Select start,end 
+    $temp.start=INT64-toIP -int $startaddr 
+    $temp.end=INT64-toIP -int $endaddr 
+    return $temp 
+}
+
 
 function Set-KeyvaultNetworkACL {
 
